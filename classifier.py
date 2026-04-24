@@ -45,8 +45,8 @@ def data_preprocessing(path_to_data):
     df.drop("native-country", axis=1, inplace=True)
 
     # Convert target variable to binary
-    df["income"] = df["income"].apply(lambda x: 1 if (x.strip() == ">50K") else 0)
-    print(df.head())
+    df["income"] = df["income"].apply(lambda x: 1 if ">50K" in x else 0)
+    # print(df.head())
     return df
 
 df_train = data_preprocessing("adult/adult.data")
@@ -128,6 +128,50 @@ grid.fit(X_train, y_train)
 
 print("Best CV score:", grid.best_score_)
 print("Best parameters:", grid.best_params_)
+
+best_knn = grid.best_estimator_
+
+## Linear Regression and Decision Tree Classifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+
+models = {
+    "kNN": best_knn,
+    "Logistic Regression": Pipeline([
+        ("preprocessing", preprocessor),
+        ("classifier", LogisticRegression(max_iter=1000))
+    ]),
+    "Decision Tree": Pipeline([
+        ("preprocessing", preprocessor),
+        ("classifier", DecisionTreeClassifier(random_state=42))
+    ])
+}
+
+
+## Train and evaluate each model
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+results = {}
+
+for name, model in models.items():
+    
+    # Skip refitting kNN (already trained by GridSearch)
+    if name != "kNN":
+        model.fit(X_train, y_train)
+    
+    y_pred = model.predict(X_test)
+    
+    results[name] = {
+        "accuracy": accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred),
+        "recall": recall_score(y_test, y_pred),
+        "f1": f1_score(y_test, y_pred),
+    }
+
+for model_name, metrics in results.items():
+    print(f"\n{model_name}")
+    for metric, value in metrics.items():
+        print(f"{metric}: {value:.4f}")
 
 # # Best model
 # vscode
