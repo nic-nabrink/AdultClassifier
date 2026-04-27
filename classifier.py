@@ -3,7 +3,7 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import StratifiedKFold, train_test_split, GridSearchCV
 from sklearn.preprocessing import OneHotEncoder, StandardScaler, KBinsDiscretizer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
@@ -123,7 +123,20 @@ param_grid = {
     # "preprocessing__num__kbins__n_bins": [3,5,10,20,30],
 }
 
-grid = GridSearchCV(pipeline, param_grid, cv=5, scoring="accuracy", n_jobs=6)
+# grid = GridSearchCV(pipeline, param_grid, cv=5, scoring="accuracy", n_jobs=6)
+# 5-fold stratified CV (handles class imbalance)
+cv_strategy = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+
+# Grid search
+grid = GridSearchCV(
+    pipeline, 
+    param_grid, 
+    cv=cv_strategy,
+    scoring="accuracy",  # Primary metric (change to "f1" for imbalance focus)
+    n_jobs=6,
+    verbose=1
+)
+
 grid.fit(X_train, y_train)
 
 print("Best CV score:", grid.best_score_)
@@ -172,6 +185,8 @@ for model_name, metrics in results.items():
     print(f"\n{model_name}")
     for metric, value in metrics.items():
         print(f"{metric}: {value:.4f}")
+
+
 
 # # Best model
 # vscode
